@@ -4,9 +4,6 @@ from jenky.menus.base import BaseMenu
 
 class InitialMenu(BaseMenu):
 
-    def __init__(self, wf):
-        super(InitialMenu, self).__init__(wf)
-
     @property
     def items(self):
         return [

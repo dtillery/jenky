@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-
 from workflow import ICON_WARNING
 
 from jenky import QUERY_DELIMITER
 
 class BaseMenu(object):
+
+    query_match = None
 
     delimiter = QUERY_DELIMITER
 
@@ -23,8 +24,13 @@ class BaseMenu(object):
             }
         ]
 
-    def __init__(self, wf):
+    @property
+    def output(self):
+        return self.query
+
+    def __init__(self, wf, query):
         self.wf = wf
+        self.query = query
 
     def set_menu(self):
         for item in self.items:
