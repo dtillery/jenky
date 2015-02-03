@@ -19,6 +19,9 @@ def jenky_configured(wf):
         api_key = wf.get_password("jenkins_api_key")
     except PasswordNotFound:
         api_key = None
+    log.debug("Username is %s" % username)
+    log.debug("API Key %s" % (api_key and "exists" or "does not exist"))
+    log.debug("Hostname is %s" % hostname)
     return username and hostname and api_key
 
 

@@ -54,7 +54,7 @@ class UsernameMenu(BaseMenu):
     @property
     def output(self):
         username = self.query.split(QUERY_DELIMITER)[1].strip()
-        return "username:%s" % username
+        return "jenky_setting:username:%s" % username
 
 
 class APIKeyMenu(BaseMenu):
@@ -75,7 +75,7 @@ class APIKeyMenu(BaseMenu):
     @property
     def output(self):
         api_key = self.query.split(QUERY_DELIMITER)[1].strip()
-        return "api_key:%s" % api_key
+        return "jenky_setting:api_key:%s" % api_key
 
 
 class HostnameMenu(BaseMenu):
@@ -96,4 +96,4 @@ class HostnameMenu(BaseMenu):
     @property
     def output(self):
         hostname = self.query.split(QUERY_DELIMITER)[1].strip()
-        return "hostname:%s" % hostname
+        return "jenky_setting:hostname:%s" % hostname
