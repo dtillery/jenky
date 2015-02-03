@@ -2,10 +2,9 @@
 import argparse
 import sys
 
-from jenkins import Jenkins
 from workflow import Workflow, ICON_WARNING, PasswordNotFound
 
-from jenky.menus import available_menus, settings_menus
+from jenky.menus import available_menus
 from jenky.menus.initial import InitialMenu
 from jenky.menus.unconfigured import UnconfiguredMenu
 
@@ -30,14 +29,10 @@ def get_menu(query, wf):
     if not jenky_configured(wf):
         menu = UnconfiguredMenu(wf, query)
     else:
-        if not query:
-            menu = InitialMenu(wf, query)
-        else:
-            pass
-        # for m in available_menus:
-        #     if m.query_match.match(query):
-        #         menu = m(wf, query)
-        #         break
+        for m in available_menus:
+            if m.query_match.match(query):
+                menu = m(wf, query)
+                break
     return menu
 
 

@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+import re
 
 from jenky.menus.base import BaseMenu
 
 class InitialMenu(BaseMenu):
+
+    query_match = re.compile("^$")
 
     @property
     def items(self):
