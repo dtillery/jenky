@@ -6,7 +6,7 @@ from jenky.menus.base import BaseMenu
 
 class SettingsMenu(BaseMenu):
 
-    query_match = re.compile("^s$")
+    query_match = re.compile("")
 
     @property
     def items(self):

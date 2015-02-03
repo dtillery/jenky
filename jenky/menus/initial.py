@@ -13,9 +13,9 @@ class InitialMenu(BaseMenu):
                 "valid": False
             },
             {
-                "title": "Go to settings (or use 'jenky s' at any time).",
+                "title": "Go to settings menu.",
                 "subtitle": "You'll need to configure username, api key, and hostname to get up and running.",
-                "valid": False,
-                "autocomplete": "s"
+                "valid": True,
+                "arg": "jenky-settings"
             }
         ]
