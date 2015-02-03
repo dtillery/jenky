@@ -9,13 +9,19 @@ class InitialMenu(BaseMenu):
         return [
             {
                 "title": "Welcome to Jenky!",
-                "subtitle": "It looks like some things still need to be set configured.",
+                "subtitle": "Start typing the name of a job...",
                 "valid": False
             },
             {
-                "title": "Go to settings menu.",
-                "subtitle": "You'll need to configure username, api key, and hostname to get up and running.",
+                "title": "Go to Settings",
+                "subtitle": "You can change your username, API key and hostname here.",
                 "valid": True,
                 "arg": "jenky-settings"
+            },
+            {
+                "title": "Clear Job Cache",
+                "subtitle": "Clean out the local Job cache. Data will be fetched from the server on next launch.",
+                "valid": True,
+                "arg": "jenky-clear_cache"
             }
         ]

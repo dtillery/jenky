@@ -7,6 +7,7 @@ from workflow import Workflow, ICON_WARNING, PasswordNotFound
 
 from jenky.menus import available_menus, settings_menus
 from jenky.menus.initial import InitialMenu
+from jenky.menus.unconfigured import UnconfiguredMenu
 
 log = None
 
@@ -27,12 +28,16 @@ def jenky_configured(wf):
 def get_menu(query, wf):
     menu = None
     if not jenky_configured(wf):
-        menu = InitialMenu(wf, query)
+        menu = UnconfiguredMenu(wf, query)
     else:
-        for m in available_menus:
-            if m.query_match.match(query):
-                menu = m(wf, query)
-                break
+        if not query:
+            menu = InitialMenu(wf, query)
+        else:
+            pass
+        # for m in available_menus:
+        #     if m.query_match.match(query):
+        #         menu = m(wf, query)
+        #         break
     return menu
 
 
