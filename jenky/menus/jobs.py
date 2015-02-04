@@ -38,7 +38,7 @@ class JobsMenu(BaseMenu):
         except PasswordNotFound:
             self.api_key = None
 
-        #TODO: handle settings missing
+        #TODO: Better handle missing/bad credentials
 
         self.jobs = wf.cached_data("jobs", self.get_jobs, max_age=0)
         if query:

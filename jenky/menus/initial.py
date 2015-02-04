@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import re
 
+from workflow import ICON_SETTINGS, ICON_BURN
+
 from jenky.menus.base import BaseMenu
 
 class InitialMenu(BaseMenu):
@@ -19,12 +21,14 @@ class InitialMenu(BaseMenu):
                 "title": "Go to Settings",
                 "subtitle": "You can change your username, API key and hostname here.",
                 "valid": True,
-                "arg": "jenky-settings"
+                "arg": "jenky-settings",
+                "icon": ICON_SETTINGS
             },
             {
                 "title": "Clear Job Cache",
                 "subtitle": "Clear out the local Job cache. Data will be fetched from the server on next launch.",
                 "valid": True,
-                "arg": "jenky-clear-job-cache"
+                "arg": "jenky-clear-job-cache",
+                "icon": ICON_BURN
             }
         ]
