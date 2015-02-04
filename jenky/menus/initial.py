@@ -23,8 +23,8 @@ class InitialMenu(BaseMenu):
             },
             {
                 "title": "Clear Job Cache",
-                "subtitle": "Clean out the local Job cache. Data will be fetched from the server on next launch.",
+                "subtitle": "Clear out the local Job cache. Data will be fetched from the server on next launch.",
                 "valid": True,
-                "arg": "jenky-clear_cache"
+                "arg": "jenky-clear-job-cache"
             }
         ]
