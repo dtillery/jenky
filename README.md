@@ -1,4 +1,7 @@
 # Jenky - An Alfred workflow for Jenkins
+
+![Jenky](images/readme/home-menu.png)
+
 Jenky is an [Alfred](http://www.alfredapp.com/) workflow that allows you to search and (eventually) control your [Jenkins CI](http://jenkins-ci.org/) instance in a pleasant and natural-feeling way.
 
 ## Features
@@ -16,15 +19,23 @@ Jenky is an [Alfred](http://www.alfredapp.com/) workflow that allows you to sear
 ## Setup
 When you bring up Jenky for the first time, the setup should be pretty straightforwad. You'll need to set your Jenkins username, API Key and Hostname. You can find your Jenkins API Key on the "Configure" page.
 
+![Your Jenkins Configure page](images/readme/jenkins-configure.png)
+
 Enter all three pieces of information and you're good to go!
+
+![The Jenky settings menu](images/readme/settings-menu.png)
 
 ## Usage
 
 ### Searching for and launching jobs
 Just start typing the name of the job you're looking for!  When you find it, hit enter and the webpage for it will be opened.
 
+![Jenky in action](images/readme/jenky-use.png)
+
 ### Clearing the job cache
 By default Jenky caches your jobs list so that searching is as fast as possible.  Eventually we'll do some smart background updating, but in the meantime if you need to refresh your jobs list (if a new job has been added), just choose the "Clear Job Cache" option on the main menu.  Next time you launch Jenky, your jobs list will be repopulated from your instance.
+
+![Clearing Jenky's cache](images/readme/jenky-clear-cache.png)
 
 ## Acknowledgements
 * **citelao** and the [Spotifious](https://github.com/citelao/Spotify-for-Alfred) Alfred workflow for inspiring the design patterns used here, and showing how a high quality workflow should be.
