@@ -126,7 +126,7 @@ class ParamMenu(BaseMenu):
                     "title": "Type in your value for %s." % self.param_name,
                     "subtitle": self.param_info.get("description", "No description available."),
                     "valid": False,
-                    "autocomplete": self.query
+                    "autocomplete": self.build_param_set_string(self.query_parts[-1])
                 }
             ]
         elif self.param_type == "ChoiceParameterDefinition":
@@ -142,7 +142,7 @@ class ParamMenu(BaseMenu):
                 items.append({
                         "title": choice,
                         "valid": False,
-                        "autocomplete": self.query
+                        "autocomplete": self.build_param_set_string(choice)
                     })
         elif self.param_type == "BooleanParameterDefinition":
             items = [
@@ -156,12 +156,12 @@ class ParamMenu(BaseMenu):
                 {
                     "title": "True",
                     "valid": False,
-                    "autocomplete": self.query
+                    "autocomplete": self.build_param_set_string("jenkybooltrue")
                 },
                 {
                     "title": "False",
                     "valid": False,
-                    "autocomplete": self.query
+                    "autocomplete": self.build_param_set_string("jenkyboolfalse")
                 },
             ]
         elif self.param_type == "PasswordParameterDefinition":
@@ -170,7 +170,7 @@ class ParamMenu(BaseMenu):
                     "title": "Type in your password value for %s." % self.param_name,
                     "subtitle": self.param_info.get("description", "No description available."),
                     "valid": False,
-                    "autocomplete": self.query
+                    "autocomplete": self.build_param_set_string(self.query_parts[-1])
                 }
             ]
         else:
@@ -206,3 +206,21 @@ class ParamMenu(BaseMenu):
                 self.param_info = param
                 break
         self.param_type = self.param_info.get("type")
+
+    def build_param_set_string(self, choice):
+        if not self.existing_query_params:
+            self.existing_query_params = "params"
+        new_params_string = "%(ex)s%(del)s%(name)s%(del)s%(choice)s" % {
+            "ex": self.existing_query_params,
+            "del": SUBQUERY_DELIMITER,
+            "name": self.param_name,
+            "choice": choice
+        }
+        s = "%(jn)s %(del)s "
+        s += "%(nps)s %(del)s "
+        s += "Build %(del)s "
+        return s % {
+            "jn": self.job_name,
+            "del": QUERY_DELIMITER,
+            "nps": new_params_string
+        }
