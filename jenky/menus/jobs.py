@@ -8,6 +8,7 @@ from jenky.menus.base import BaseMenu
 
 class JobsMenu(BaseMenu):
 
+    # basically match eveyrthing that's not empty string
     query_match = re.compile("^(?!\s*$).+")
 
     @property
