@@ -35,7 +35,7 @@ class BuildJobMenu(BaseMenu):
 
     @property
     def items(self):
-        return [
+        items = [
             {
                 "title": "Build %s" % self.job_name,
                 "subtitle": "Start a job build using the parameters you've chosen and any other defaults.",
@@ -44,6 +44,22 @@ class BuildJobMenu(BaseMenu):
 
             }
         ]
+        if self.parameters:
+            for param in self.parameters:
+                name = param.get("name", None)
+                t = param.get("type", "No type")
+                default = param.get("defaultParameterValue", {}).get("value", None)
+                if default is None:
+                    default = "No default value."
+                item = {
+                    "title": name,
+                    "subtitle": "%s: %s" % (t, default),
+                    "valid": False,
+                    "autocomplete": "%s %s %s" % (self.query, QUERY_DELIMITER, name)
+                }
+                items.append(item)
+        return items
+
 
     def __init__(self, wf, query):
         super(BuildJobMenu, self).__init__(wf, query)
