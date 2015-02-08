@@ -2,11 +2,18 @@
 import re
 
 from jenkins import Jenkins
-from workflow import ICON_INFO
+from workflow import ICON_INFO, ICON_ERROR, ICON_WARNING
 from workflow.background import run_in_background, is_running
 
 from jenky import QUERY_DELIMITER, SUBQUERY_DELIMITER
 from jenky.menus.base import BaseMenu
+
+PARAM_DEF_MAP = {
+    "BooleanParameterDefinition": "Boolean Parameter",
+    "StringParameterDefinition": "String Parameter",
+    "ChoiceParameterDefinition": "Choice Parameter",
+    "PasswordParameterDefinition": "Password Parameter"
+}
 
 
 class InitialBuildMenu(BaseMenu):
@@ -39,7 +46,7 @@ class BuildJobMenu(BaseMenu):
         if not self.searching_for_param:
             items.append({
                 "title": "Build %s" % self.job_name,
-                "subtitle": "Start a job build using the parameters you've chosen and any other defaults.",
+                "subtitle": "Start a job build using the parameters you've set (and defaults otherwise).",
                 "valid": True,
                 "arg": "Let's build %s!" % self.job_name
 
@@ -48,12 +55,13 @@ class BuildJobMenu(BaseMenu):
             for param in self.parameters:
                 name = param.get("name", None)
                 t = param.get("type", "No type")
+                desc = param.get("description", "No description available.")
                 default = param.get("defaultParameterValue", {}).get("value", None)
                 if default is None:
-                    default = "No default value."
+                    default = "No default"
                 item = {
-                    "title": name,
-                    "subtitle": "%s: %s" % (t, default),
+                    "title": "%s (%s)" % (name, default),
+                    "subtitle": "%s: %s" % (PARAM_DEF_MAP.get(t), desc),
                     "valid": False,
                     "autocomplete": self.build_param_menu_string(name)
                 }
@@ -65,7 +73,7 @@ class BuildJobMenu(BaseMenu):
         super(BuildJobMenu, self).__init__(wf, query)
         self.query_parts = [q.strip() for q in self.query.split("%s" % QUERY_DELIMITER)]
         self.job_name = self.query_parts[0]
-        self.query_params = SUBQUERY_DELIMITER in self.query_parts[1] and self.query_parts[1]
+        self.existing_query_params = SUBQUERY_DELIMITER in self.query_parts[1] and self.query_parts[1]
 
         # check job param freshness, 1 day
         if not self.wf.cached_data_fresh("%s_params" % self.job_name, 86400):
@@ -95,16 +103,106 @@ class BuildJobMenu(BaseMenu):
 
     def build_param_menu_string(self, param_name):
         s = "%(jn)s %(del)s "
-        if self.query_params:
+        if self.existing_query_params:
             s += "%(qp)s %(del)s "
         s += "Set Param %(del)s %(pn)s %(del)s "
         return s % {
             "jn": self.job_name,
             "del": QUERY_DELIMITER,
-            "qp": self.query_params,
+            "qp": self.existing_query_params,
             "pn": param_name
         }
 
 
 class ParamMenu(BaseMenu):
-    pass
+
+    query_match = re.compile("^.* %s Set Param %s\\s*.*$" % (QUERY_DELIMITER, QUERY_DELIMITER))
+
+    @property
+    def items(self):
+        if self.param_type == "StringParameterDefinition":
+            items = [
+                {
+                    "title": "Type in your value for %s." % self.param_name,
+                    "subtitle": self.param_info.get("description", "No description available."),
+                    "valid": False,
+                    "autocomplete": self.query
+                }
+            ]
+        elif self.param_type == "ChoiceParameterDefinition":
+            items = [
+                {
+                    "title": "Choose a value for %s." % self.param_name,
+                    "subtitle": self.param_info.get("description", "No description available."),
+                    "valid": False,
+                    "autocomplete": self.query
+                }
+            ]
+            for choice in self.param_info.get("choices", []):
+                items.append({
+                        "title": choice,
+                        "valid": False,
+                        "autocomplete": self.query
+                    })
+        elif self.param_type == "BooleanParameterDefinition":
+            items = [
+                {
+                    "title": "Choose a boolean for %s." % self.param_name,
+                    "subtitle": self.param_info.get("description", "No description available."),
+                    "valid": False,
+                    "autocomplete": self.query
+
+                },
+                {
+                    "title": "True",
+                    "valid": False,
+                    "autocomplete": self.query
+                },
+                {
+                    "title": "False",
+                    "valid": False,
+                    "autocomplete": self.query
+                },
+            ]
+        elif self.param_type == "PasswordParameterDefinition":
+            items = [
+                {
+                    "title": "Type in your password value for %s." % self.param_name,
+                    "subtitle": self.param_info.get("description", "No description available."),
+                    "valid": False,
+                    "autocomplete": self.query
+                }
+            ]
+        else:
+            items = [
+                {
+                    "title": "Unknown paramter type: %s" % self.param_type,
+                    "subtitle": "Please report this type and use case to the developer.",
+                    "valid": False,
+                    "autocomplete": self.query,
+                    "icon": ICON_ERROR
+                }
+            ]
+        items.append({
+                "title": "Cancel parameter set.",
+                "subtitle": "Return to the main build menu.",
+                "valid": False,
+                "autocomplete": self.query,
+                "icon": ICON_WARNING
+            })
+        return items
+
+
+    def __init__(self, wf, query):
+        super(ParamMenu, self).__init__(wf, query)
+        self.query_parts = [q.strip() for q in self.query.split("%s" % QUERY_DELIMITER)]
+        self.job_name = self.query_parts[0]
+        self.existing_query_params = SUBQUERY_DELIMITER in self.query_parts[1] and self.query_parts[1]
+        self.param_name = self.query_parts[-2]
+
+        parameters = self.wf.cached_data("%s_params" % self.job_name, max_age=0)
+        for param in parameters:
+            if param.get("name", "") == self.param_name:
+                self.param_info = param
+                break
+        self.param_type = self.param_info.get("type")
