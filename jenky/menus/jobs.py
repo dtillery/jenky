@@ -20,7 +20,10 @@ class JobsMenu(BaseMenu):
                 "subtitle": job.get("url", ""),
                 "valid": True,
                 "arg": job.get("url"),
-                "uid": job.get("name")
+                "uid": job.get("name"),
+                "modifier_subtitles": {
+                    u"shift": "Go to the job build menu for %s." % job.get("name", "Unknown Job Name")
+                }
             })
         if not items:
             items.append({
