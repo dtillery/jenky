@@ -31,19 +31,19 @@ class InitialBuildMenu(BaseMenu):
 
 class BuildJobMenu(BaseMenu):
 
-    query_match = re.compile("^.* %s Build %s\\s?$" % (QUERY_DELIMITER, QUERY_DELIMITER))
+    query_match = re.compile("^.* %s Build %s\\s*.*$" % (QUERY_DELIMITER, QUERY_DELIMITER))
 
     @property
     def items(self):
-        items = [
-            {
+        items = []
+        if not self.searching_for_param:
+            items.append({
                 "title": "Build %s" % self.job_name,
                 "subtitle": "Start a job build using the parameters you've chosen and any other defaults.",
                 "valid": True,
                 "arg": "Let's build %s!" % self.job_name
 
-            }
-        ]
+            })
         if self.parameters:
             for param in self.parameters:
                 name = param.get("name", None)
@@ -63,9 +63,10 @@ class BuildJobMenu(BaseMenu):
 
     def __init__(self, wf, query):
         super(BuildJobMenu, self).__init__(wf, query)
-        query_parts = self.query.split(" %s " % QUERY_DELIMITER)
+        query_parts = self.query.split("%s" % QUERY_DELIMITER)
+        query_parts = [q.strip() for q in query_parts]
+        self.log.debug(query_parts)
         self.job_name = query_parts[0]
-        # TODO: for filtering items, should modify query to remove build-info and filter on remaining
 
         # check job param freshness, 1 day
         if not self.wf.cached_data_fresh("%s_params" % self.job_name, 86400):
@@ -85,6 +86,13 @@ class BuildJobMenu(BaseMenu):
                              autocomplete=self.query)
 
         self.parameters = self.wf.cached_data("%s_params" % self.job_name, max_age=0)
+        self.searching_for_param = False
+        if query_parts[-1] and not query_parts[-1].startswith("Build"):
+            self.searching_for_param = True
+            self.parameters = self.wf.filter(query_parts[-1], self.parameters, key=self.search_key_for_param, min_score=20)
+
+    def search_key_for_param(self, param):
+        return param.get("name", "")
 
 
 class ParamMenu(BaseMenu):
