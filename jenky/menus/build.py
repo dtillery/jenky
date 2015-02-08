@@ -5,7 +5,7 @@ from jenkins import Jenkins
 from workflow import ICON_INFO
 from workflow.background import run_in_background, is_running
 
-from jenky import QUERY_DELIMITER
+from jenky import QUERY_DELIMITER, SUBQUERY_DELIMITER
 from jenky.menus.base import BaseMenu
 
 
@@ -20,7 +20,7 @@ class InitialBuildMenu(BaseMenu):
                 "title": "Build %s job." % self.job_name,
                 "subtitle": "Enter the build menu to set parameters and start a build.",
                 "valid": False,
-                "autocomplete": "%s %s Build %s " % (self.job_name, QUERY_DELIMITER, QUERY_DELIMITER)
+                "autocomplete": "%(name)s %(del)s Build %(del)s " % {"name":self.job_name, "del":QUERY_DELIMITER}
             }
         ]
 
@@ -55,7 +55,7 @@ class BuildJobMenu(BaseMenu):
                     "title": name,
                     "subtitle": "%s: %s" % (t, default),
                     "valid": False,
-                    "autocomplete": "%s %s %s" % (self.query, QUERY_DELIMITER, name)
+                    "autocomplete": self.build_param_menu_string(name)
                 }
                 items.append(item)
         return items
@@ -63,10 +63,9 @@ class BuildJobMenu(BaseMenu):
 
     def __init__(self, wf, query):
         super(BuildJobMenu, self).__init__(wf, query)
-        query_parts = self.query.split("%s" % QUERY_DELIMITER)
-        query_parts = [q.strip() for q in query_parts]
-        self.log.debug(query_parts)
-        self.job_name = query_parts[0]
+        self.query_parts = [q.strip() for q in self.query.split("%s" % QUERY_DELIMITER)]
+        self.job_name = self.query_parts[0]
+        self.query_params = SUBQUERY_DELIMITER in self.query_parts[1] and self.query_parts[1]
 
         # check job param freshness, 1 day
         if not self.wf.cached_data_fresh("%s_params" % self.job_name, 86400):
@@ -87,12 +86,24 @@ class BuildJobMenu(BaseMenu):
 
         self.parameters = self.wf.cached_data("%s_params" % self.job_name, max_age=0)
         self.searching_for_param = False
-        if query_parts[-1] and not query_parts[-1].startswith("Build"):
+        if self.query_parts[-1] and not self.query_parts[-1].startswith("Build"):
             self.searching_for_param = True
-            self.parameters = self.wf.filter(query_parts[-1], self.parameters, key=self.search_key_for_param, min_score=20)
+            self.parameters = self.wf.filter(self.query_parts[-1], self.parameters, key=self.search_key_for_param, min_score=20)
 
     def search_key_for_param(self, param):
         return param.get("name", "")
+
+    def build_param_menu_string(self, param_name):
+        s = "%(jn)s %(del)s "
+        if self.query_params:
+            s += "%(qp)s %(del)s "
+        s += "Set Param %(del)s %(pn)s %(del)s "
+        return s % {
+            "jn": self.job_name,
+            "del": QUERY_DELIMITER,
+            "qp": self.query_params,
+            "pn": param_name
+        }
 
 
 class ParamMenu(BaseMenu):
