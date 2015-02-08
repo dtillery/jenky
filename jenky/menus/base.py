@@ -3,6 +3,7 @@ from workflow import ICON_WARNING
 
 from jenky import QUERY_DELIMITER
 
+
 class BaseMenu(object):
 
     query_match = None
@@ -31,6 +32,7 @@ class BaseMenu(object):
     def __init__(self, wf, query):
         self.wf = wf
         self.query = query
+        self.log = self.wf.logger
 
     def set_menu(self):
         for item in self.items:
