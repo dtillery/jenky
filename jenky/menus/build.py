@@ -15,6 +15,19 @@ PARAM_DEF_MAP = {
     "PasswordParameterDefinition": "Password Parameter"
 }
 
+def parse_inline_params(params_string):
+    if not params_string:
+        return {}
+    params = {}
+    params_list = params_string.split(SUBQUERY_DELIMITER)
+    if params_list.pop(0) != "params":
+        log.debug("Params String messed up: %s" % params_string)
+        return {}
+    if len(params_list) % 2 != 0:
+        log.debug("Params list length not even: %s" % params_list)
+        return {}
+    return {params_list[i]: params_list[i+1] for i in range(0, len(params_list), 2)}
+
 
 class InitialBuildMenu(BaseMenu):
 
@@ -56,11 +69,12 @@ class BuildJobMenu(BaseMenu):
                 name = param.get("name", None)
                 t = param.get("type", "No type")
                 desc = param.get("description", "No description available.")
-                default = param.get("defaultParameterValue", {}).get("value", None)
-                if default is None:
-                    default = "No default"
+                if name in self.chosen_params:
+                    val = self.chosen_params.get(name)
+                else:
+                    val = param.get("defaultParameterValue", {}).get("value", "No default")
                 item = {
-                    "title": "%s (%s)" % (name, default),
+                    "title": "%s (%s)" % (name, val),
                     "subtitle": "%s: %s" % (PARAM_DEF_MAP.get(t), desc),
                     "valid": False,
                     "autocomplete": self.build_param_menu_string(name)
@@ -74,6 +88,7 @@ class BuildJobMenu(BaseMenu):
         self.query_parts = [q.strip() for q in self.query.split("%s" % QUERY_DELIMITER)]
         self.job_name = self.query_parts[0]
         self.existing_query_params = SUBQUERY_DELIMITER in self.query_parts[1] and self.query_parts[1]
+        self.chosen_params = parse_inline_params(self.existing_query_params)
 
         # check job param freshness, 1 day
         if not self.wf.cached_data_fresh("%s_params" % self.job_name, 86400):
@@ -120,22 +135,23 @@ class ParamMenu(BaseMenu):
 
     @property
     def items(self):
+        val_to_use = self.chosen_params.get(self.param_name) or self.param_info.get("defaultParameterValue", {}).get("value", "No Default")
         if self.param_type == "StringParameterDefinition":
             items = [
                 {
-                    "title": "Type in your value for %s." % self.param_name,
+                    "title": "Type in your value for %s (%s)." % (self.param_name, val_to_use),
                     "subtitle": self.param_info.get("description", "No description available."),
                     "valid": False,
-                    "autocomplete": self.build_param_set_string(self.query_parts[-1])
+                    "autocomplete": self.build_param_set_string(self.query_parts[-1] or val_to_use)
                 }
             ]
         elif self.param_type == "ChoiceParameterDefinition":
             items = [
                 {
-                    "title": "Choose a value for %s." % self.param_name,
+                    "title": "Choose a value for %s (%s)." % (self.param_name, val_to_use),
                     "subtitle": self.param_info.get("description", "No description available."),
                     "valid": False,
-                    "autocomplete": self.query
+                    "autocomplete": self.build_param_set_string(val_to_use)
                 }
             ]
             for choice in self.param_info.get("choices", []):
@@ -147,10 +163,10 @@ class ParamMenu(BaseMenu):
         elif self.param_type == "BooleanParameterDefinition":
             items = [
                 {
-                    "title": "Choose a boolean for %s." % self.param_name,
+                    "title": "Choose a boolean for %s (%s)." % (self.param_name, val_to_use),
                     "subtitle": self.param_info.get("description", "No description available."),
                     "valid": False,
-                    "autocomplete": self.query
+                    "autocomplete": self.build_param_set_string(val_to_use)
 
                 },
                 {
@@ -170,7 +186,7 @@ class ParamMenu(BaseMenu):
                     "title": "Type in your password value for %s." % self.param_name,
                     "subtitle": self.param_info.get("description", "No description available."),
                     "valid": False,
-                    "autocomplete": self.build_param_set_string(self.query_parts[-1])
+                    "autocomplete": self.build_param_set_string(self.query_parts[-1] or val_to_use)
                 }
             ]
         else:
@@ -198,6 +214,7 @@ class ParamMenu(BaseMenu):
         self.query_parts = [q.strip() for q in self.query.split("%s" % QUERY_DELIMITER)]
         self.job_name = self.query_parts[0]
         self.existing_query_params = SUBQUERY_DELIMITER in self.query_parts[1] and self.query_parts[1]
+        self.chosen_params = parse_inline_params(self.existing_query_params)
         self.param_name = self.query_parts[-2]
 
         parameters = self.wf.cached_data("%s_params" % self.job_name, max_age=0)
