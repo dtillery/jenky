@@ -61,7 +61,7 @@ class BuildJobMenu(BaseMenu):
                 "title": "Build %s" % self.job_name,
                 "subtitle": "Start a job build using the parameters you've set (and defaults otherwise).",
                 "valid": True,
-                "arg": "Let's build %s!" % self.job_name
+                "arg": "jenky_action:build:%s%s%s" % (self.job_name, SUBQUERY_DELIMITER, self.existing_query_params)
 
             })
         if self.parameters:
