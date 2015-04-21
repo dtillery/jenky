@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import json
 import re
 
 from jenkins import Jenkins
+from six.moves.urllib.request import Request
 from workflow import ICON_INFO, ICON_ERROR, ICON_WARNING
 from workflow.background import run_in_background, is_running
 
@@ -41,6 +43,12 @@ class InitialBuildMenu(BaseMenu):
                 "subtitle": "Enter the build menu to set parameters and start a build.",
                 "valid": False,
                 "autocomplete": "%(name)s %(del)s Build %(del)s " % {"name":self.job_name, "del":QUERY_DELIMITER}
+            },
+            {
+                "title": "Build History.",
+                "subtitle": "View recent builds and re-run them.",
+                "valid": False,
+                "autocomplete": "%(name)s %(del)s Build History %(del)s " % {"name":self.job_name, "del":QUERY_DELIMITER}
             }
         ]
 
@@ -242,4 +250,92 @@ class ParamMenu(BaseMenu):
             "jn": self.job_name,
             "del": QUERY_DELIMITER,
             "nps": new_params_string
+        }
+
+
+class BuildHistoryMenu(BaseMenu):
+
+    query_match = re.compile("^.* %s Build History %s\\s*.*$" % (QUERY_DELIMITER, QUERY_DELIMITER))
+
+    @property
+    def items(self):
+        items = []
+        for build in self.recent_build_list:
+            self.log.debug(self.build_rerun_string(build.get("parameters", {})))
+            sub = ", ".join(["%s:%s" % (p.get("name"), p.get("value")) for p in build.get("parameters", {})])
+            items.append({
+                "title": build.get("name", "No Build Name").replace("%s " % self.job_name, ""),
+                "subtitle": sub,
+                "valid": False,
+                "autocomplete": self.build_rerun_string(build.get("parameters", {}))
+            })
+        if not items:
+            items.append({
+                "title": "No recent builds that match \"%s\"." % self.query,
+                "valid": False
+            })
+        return items
+
+    def __init__(self, wf, query):
+        super(BuildHistoryMenu, self).__init__(wf, query)
+        self.query_parts = [q.strip() for q in self.query.split("%s" % QUERY_DELIMITER)]
+        self.job_name = self.query_parts[0]
+        self.username = wf.settings.get("jenkins_username", None)
+        self.hostname = wf.settings.get("jenkins_hostname", None)
+        try:
+            self.api_key = wf.get_password("jenkins_api_key")
+        except PasswordNotFound:
+            self.api_key = None
+
+        # would love to display "in progress" message while working...
+        # if self.wf.cached_data_age("build_history_%s" % self.job_name) == 0:
+        #     self.wf.add_item("Retrieving Build History...",
+        #                      "This should only take a minute.",
+        #                      icon=ICON_INFO,
+        #                      valid=False,
+        #                      autocomplete=self.query)
+        #     self.wf.send_feedback()
+
+        # cache for 2 minutes
+        self.recent_build_list = self.wf.cached_data("build_history_%s" % self.job_name, self.get_recent_builds, 120)
+        if self.query_parts[-1] and not self.query_parts[-1].startswith("Recent"):
+            self.recent_build_list = self.wf.filter(self.query_parts[-1], self.recent_build_list, key=self.search_key_for_build)
+
+    def get_recent_builds(self):
+        j = Jenkins(self.hostname, self.username, self.api_key)
+        r = Request(j.server + "job/%s/api/json?tree=builds[url,fullDisplayName,actions[parameters[name,value]]]" % self.job_name)
+        response = json.loads(j.jenkins_open(r))
+        builds = response.get("builds", [])
+        final = []
+        for b in builds:
+            info = {}
+            for d in b.get("actions", []):
+                if "parameters" in d.keys():
+                    info["parameters"] = d.get("parameters", [])
+                    break
+            info["url"] = b.get("url", "")
+            info["name"] = b.get("fullDisplayName", "")
+            final.append(info)
+        return final
+
+    def search_key_for_build(self, build):
+        return build.get("name", "")
+
+    def build_rerun_string(self, params):
+        param_string = ""
+        s = "%(jn)s %(del)s "
+        s += "params"
+        for p in params:
+            n = p.get("name")
+            v = p.get("value")
+            if v:
+                if v is True or v is False:
+                    v = v and "jenkybooltrue" or "jenkyboolfalse"
+                s += "%s%s%s%s" % (SUBQUERY_DELIMITER, n, SUBQUERY_DELIMITER, v)
+        s += " %(del)s Build %(del)s "
+
+        return s % {
+            "jn": self.job_name,
+            "del": QUERY_DELIMITER,
+            "sdel": SUBQUERY_DELIMITER
         }
