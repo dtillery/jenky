@@ -264,7 +264,7 @@ class BuildHistoryMenu(BaseMenu):
             self.log.debug(self.build_rerun_string(build.get("parameters", {})))
             sub = ", ".join(["%s:%s" % (p.get("name"), p.get("value")) for p in build.get("parameters", {})])
             items.append({
-                "title": build.get("name", "No Build Name").replace("%s " % self.job_name, ""),
+                "title": "%s (%s)" % (build.get("name", "No Build Name").replace("%s " % self.job_name, ""), build.get("result")),
                 "subtitle": sub,
                 "valid": False,
                 "autocomplete": self.build_rerun_string(build.get("parameters", {}))
@@ -303,7 +303,7 @@ class BuildHistoryMenu(BaseMenu):
 
     def get_recent_builds(self):
         j = Jenkins(self.hostname, self.username, self.api_key)
-        r = Request(j.server + "job/%s/api/json?tree=builds[url,fullDisplayName,actions[parameters[name,value]]]" % self.job_name)
+        r = Request(j.server + "job/%s/api/json?tree=builds[url,fullDisplayName,result,actions[parameters[name,value]]]" % self.job_name)
         response = json.loads(j.jenkins_open(r))
         builds = response.get("builds", [])
         final = []
@@ -315,6 +315,7 @@ class BuildHistoryMenu(BaseMenu):
                     break
             info["url"] = b.get("url", "")
             info["name"] = b.get("fullDisplayName", "")
+            info["result"] = b.get("result", "")
             final.append(info)
         return final
 
