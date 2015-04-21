@@ -71,6 +71,8 @@ class BuildJobMenu(BaseMenu):
                 desc = param.get("description", "No description available.")
                 if name in self.chosen_params:
                     val = self.chosen_params.get(name)
+                    if val.startswith("jenkybool"):
+                        val = val == "jenkybooltrue"
                 else:
                     val = param.get("defaultParameterValue", {}).get("value", "No default")
                 item = {
