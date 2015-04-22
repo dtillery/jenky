@@ -7,7 +7,7 @@ from six.moves.urllib.request import Request
 from workflow import ICON_INFO, ICON_ERROR, ICON_WARNING
 from workflow.background import run_in_background, is_running
 
-from jenky import QUERY_DELIMITER, SUBQUERY_DELIMITER
+from jenky import QUERY_DELIMITER, SUBQUERY_DELIMITER, BASE_IMAGE_PATH
 from jenky.menus.base import BaseMenu
 
 PARAM_DEF_MAP = {
@@ -42,13 +42,15 @@ class InitialBuildMenu(BaseMenu):
                 "title": "Build %s job." % self.job_name,
                 "subtitle": "Enter the build menu to set parameters and start a build.",
                 "valid": False,
-                "autocomplete": "%(name)s %(del)s Build %(del)s " % {"name":self.job_name, "del":QUERY_DELIMITER}
+                "autocomplete": "%(name)s %(del)s Build %(del)s " % {"name":self.job_name, "del":QUERY_DELIMITER},
+                "icon": BASE_IMAGE_PATH + "gear.png"
             },
             {
                 "title": "Build History.",
                 "subtitle": "View recent builds and re-run them.",
                 "valid": False,
-                "autocomplete": "%(name)s %(del)s Build History %(del)s " % {"name":self.job_name, "del":QUERY_DELIMITER}
+                "autocomplete": "%(name)s %(del)s Build History %(del)s " % {"name":self.job_name, "del":QUERY_DELIMITER},
+                "icon": BASE_IMAGE_PATH + "magnify.png"
             }
         ]
 
@@ -69,7 +71,8 @@ class BuildJobMenu(BaseMenu):
                 "title": "Build %s" % self.job_name,
                 "subtitle": "Start a job build using the parameters you've set (and defaults otherwise).",
                 "valid": True,
-                "arg": "jenky_action:build:%s%s%s" % (self.job_name, SUBQUERY_DELIMITER, self.existing_query_params)
+                "arg": "jenky_action:build:%s%s%s" % (self.job_name, SUBQUERY_DELIMITER, self.existing_query_params),
+                "icon": BASE_IMAGE_PATH + "lightning.png"
 
             })
         if self.parameters:
@@ -87,7 +90,8 @@ class BuildJobMenu(BaseMenu):
                     "title": "%s (%s)" % (name, val),
                     "subtitle": "%s: %s" % (PARAM_DEF_MAP.get(t), desc),
                     "valid": False,
-                    "autocomplete": self.build_param_menu_string(name)
+                    "autocomplete": self.build_param_menu_string(name),
+                    "icon": self.get_param_type_icon(t)
                 }
                 items.append(item)
         return items
@@ -137,6 +141,15 @@ class BuildJobMenu(BaseMenu):
             "qp": self.existing_query_params,
             "pn": param_name
         }
+
+    def get_param_type_icon(self, param_type):
+        types = {
+            "StringParameterDefinition": "ellipses.png",
+            "BooleanParameterDefinition": "check.png",
+            "ChoiceParameterDefinition": "list.png",
+            "PasswordParameterDefinition": "lock.png"
+        }
+        return BASE_IMAGE_PATH + types.get(param_type, "star_black.png")
 
 
 class ParamMenu(BaseMenu):
@@ -261,13 +274,13 @@ class BuildHistoryMenu(BaseMenu):
     def items(self):
         items = []
         for build in self.recent_build_list:
-            self.log.debug(self.build_rerun_string(build.get("parameters", {})))
             sub = ", ".join(["%s:%s" % (p.get("name"), p.get("value")) for p in build.get("parameters", {})])
             items.append({
-                "title": "%s (%s)" % (build.get("name", "No Build Name").replace("%s " % self.job_name, ""), build.get("result")),
+                "title": "%s" % build.get("name", "No Build Name").replace("%s " % self.job_name, ""),
                 "subtitle": sub,
                 "valid": False,
-                "autocomplete": self.build_rerun_string(build.get("parameters", {}))
+                "autocomplete": self.build_rerun_string(build.get("parameters", {})),
+                "icon": self.get_build_icon(build.get("result"), build.get("building", False))
             })
         if not items:
             items.append({
@@ -303,7 +316,7 @@ class BuildHistoryMenu(BaseMenu):
 
     def get_recent_builds(self):
         j = Jenkins(self.hostname, self.username, self.api_key)
-        r = Request(j.server + "job/%s/api/json?tree=builds[url,fullDisplayName,result,actions[parameters[name,value]]]" % self.job_name)
+        r = Request(j.server + "job/%s/api/json?tree=builds[url,fullDisplayName,result,building,actions[parameters[name,value]]]" % self.job_name)
         response = json.loads(j.jenkins_open(r))
         builds = response.get("builds", [])
         final = []
@@ -316,6 +329,7 @@ class BuildHistoryMenu(BaseMenu):
             info["url"] = b.get("url", "")
             info["name"] = b.get("fullDisplayName", "")
             info["result"] = b.get("result", "")
+            info["building"] = b.get("building", "")
             final.append(info)
         return final
 
@@ -340,3 +354,15 @@ class BuildHistoryMenu(BaseMenu):
             "del": QUERY_DELIMITER,
             "sdel": SUBQUERY_DELIMITER
         }
+
+    def get_build_icon(self, result, building):
+        if building:
+            return BASE_IMAGE_PATH + "building.png"
+        else:
+            if result == "SUCCESS":
+                return BASE_IMAGE_PATH + "blue.png"
+            elif result == "FAILURE":
+                return BASE_IMAGE_PATH + "red.png"
+            elif result == "ABORTED":
+                return BASE_IMAGE_PATH + "grey.png"
+        return BASE_IMAGE_PATH + "unknown.png"
