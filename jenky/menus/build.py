@@ -14,7 +14,8 @@ PARAM_DEF_MAP = {
     "BooleanParameterDefinition": "Boolean Parameter",
     "StringParameterDefinition": "String Parameter",
     "ChoiceParameterDefinition": "Choice Parameter",
-    "PasswordParameterDefinition": "Password Parameter"
+    "PasswordParameterDefinition": "Password Parameter",
+    "TextParameterDefinition": "Text Parameter"
 }
 
 def parse_inline_params(params_string):
@@ -145,6 +146,7 @@ class BuildJobMenu(BaseMenu):
     def get_param_type_icon(self, param_type):
         types = {
             "StringParameterDefinition": "ellipses.png",
+            "TextParameterDefinition": "ellipses.png",
             "BooleanParameterDefinition": "check.png",
             "ChoiceParameterDefinition": "list.png",
             "PasswordParameterDefinition": "lock.png"
@@ -160,6 +162,15 @@ class ParamMenu(BaseMenu):
     def items(self):
         val_to_use = self.chosen_params.get(self.param_name) or self.param_info.get("defaultParameterValue", {}).get("value", "No Default")
         if self.param_type == "StringParameterDefinition":
+            items = [
+                {
+                    "title": "Type in your value for %s (%s)." % (self.param_name, val_to_use),
+                    "subtitle": self.param_info.get("description", "No description available."),
+                    "valid": False,
+                    "autocomplete": self.build_param_set_string(self.query_parts[-1] or val_to_use)
+                }
+            ]
+        elif self.param_type == "TextParameterDefinition":
             items = [
                 {
                     "title": "Type in your value for %s (%s)." % (self.param_name, val_to_use),
