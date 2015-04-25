@@ -80,24 +80,33 @@ class BuildJobMenu(BaseMenu):
             for param in self.parameters:
                 name = param.get("name", None)
                 t = param.get("type", "No type")
-                desc = param.get("description", "No description available.")
-                if name in self.chosen_params:
-                    val = self.chosen_params.get(name)
-                    if val.startswith("jenkybool"):
-                        val = val == "jenkybooltrue"
+                if t not in PARAM_DEF_MAP:
+                    item = {
+                        "title": "%s (Unsupported Parameter Type)" % name,
+                        "subtitle": "Sorry, the \"%s\" parameter type is not currently supported by Jenky." % t,
+                        "valid": False,
+                        "icon": ICON_WARNING
+                    }
+                    items.append(item)
                 else:
-                    default = param.get("defaultParameterValue") or {}
-                    val = default.get("value") or "No Default"
-                if t == "FileParameterDefinition":
-                    val = "File Parameter"
-                item = {
-                    "title": "%s (%s)" % (name, val),
-                    "subtitle": "%s: %s" % (PARAM_DEF_MAP.get(t) or t, desc),
-                    "valid": False,
-                    "autocomplete": self.build_param_menu_string(name),
-                    "icon": self.get_param_type_icon(t)
-                }
-                items.append(item)
+                    desc = param.get("description", "No description available.")
+                    if name in self.chosen_params:
+                        val = self.chosen_params.get(name)
+                        if val.startswith("jenkybool"):
+                            val = val == "jenkybooltrue"
+                    else:
+                        default = param.get("defaultParameterValue") or {}
+                        val = default.get("value") or "No Default"
+                    if t == "FileParameterDefinition":
+                        val = "File Parameter"
+                    item = {
+                        "title": "%s (%s)" % (name, val),
+                        "subtitle": "%s: %s" % (PARAM_DEF_MAP.get(t) or t, desc),
+                        "valid": False,
+                        "autocomplete": self.build_param_menu_string(name),
+                        "icon": self.get_param_type_icon(t)
+                    }
+                    items.append(item)
         return items
 
 
