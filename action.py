@@ -9,6 +9,14 @@ from jenky import SUBQUERY_DELIMITER
 
 log = None
 
+ACCEPTED_PARAM_TYPES = (
+    "BooleanParameterDefinition",
+    "StringParameterDefinition",
+    "ChoiceParameterDefinition",
+    "PasswordParameterDefinition",
+    "TextParameterDefinition"
+)
+
 def get_jenkins_credentials(wf):
     username = wf.settings.get("jenkins_username", None)
     hostname = wf.settings.get("jenkins_hostname", None)
@@ -46,9 +54,14 @@ def build(wf, build_string):
         return
     final_params = {}
     for param in job_parameters:
-        name = param.get("name", None)
-        chosen_val = passed_params.get(name, None)
-        final_val = chosen_val or param.get("defaultParameterValue", {}).get("value", "")
+        name = param.get("name")
+        param_type = param.get("type")
+        if param_type not in ACCEPTED_PARAM_TYPES:
+            log.debug("Not sending unsupported param %s (%s)" % (name, param_type))
+            continue
+        chosen_val = passed_params.get(name)
+        default = param.get("defaultParameterValue") or {}
+        final_val = chosen_val or default.get("value")
         # translate bools
         if isinstance(final_val, basestring) and final_val.startswith("jenkybool"):
             final_val = final_val == "jenkybooltrue"
@@ -59,13 +72,21 @@ def build(wf, build_string):
     try:
         o = j.build_job(job_name, parameters=final_params)
     except NotFoundException:
-        print "Build Failed: \"%s\" job could not be found." % job_name
+        message = "Build Failed: \"%s\" job could not be found." % job_name
+        log.debug(message)
+        print message
     except Exception as e:
-        print "Build Failed: Unknown Error - %s" % e
+        message = "Build Failed: Unknown Error - %s" % e
+        log.debug(message)
+        print message
     except JenkinsException as e:
-        print "Build Failed: %s" % e
+        message = "Build Failed: %s" % e
+        log.debug(message)
+        print message
     else:
-        print "Build Success: %s build queued." % job_name
+        message = "Build Success: %s build queued." % job_name
+        log.debug(message)
+        print message
     return 0
 
 
