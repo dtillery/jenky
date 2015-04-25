@@ -86,10 +86,13 @@ class BuildJobMenu(BaseMenu):
                     if val.startswith("jenkybool"):
                         val = val == "jenkybooltrue"
                 else:
-                    val = param.get("defaultParameterValue", {}).get("value", "No default")
+                    default = param.get("defaultParameterValue") or {}
+                    val = default.get("value") or "No Default"
+                if t == "FileParameterDefinition":
+                    val = "File Parameter"
                 item = {
                     "title": "%s (%s)" % (name, val),
-                    "subtitle": "%s: %s" % (PARAM_DEF_MAP.get(t), desc),
+                    "subtitle": "%s: %s" % (PARAM_DEF_MAP.get(t) or t, desc),
                     "valid": False,
                     "autocomplete": self.build_param_menu_string(name),
                     "icon": self.get_param_type_icon(t)
