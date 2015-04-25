@@ -90,15 +90,20 @@ class BuildJobMenu(BaseMenu):
                     items.append(item)
                 else:
                     desc = param.get("description", "No description available.")
+                    # setting val to display
                     if name in self.chosen_params:
                         val = self.chosen_params.get(name)
                         if val.startswith("jenkybool"):
                             val = val == "jenkybooltrue"
+                    elif t == "FileParameterDefinition":
+                        val = "File Parameter"
                     else:
                         default = param.get("defaultParameterValue") or {}
-                        val = default.get("value") or "No Default"
-                    if t == "FileParameterDefinition":
-                        val = "File Parameter"
+                        default = default.get("value")
+                        if isinstance(default, bool):
+                            val = default
+                        else:
+                            val = default or "No Default"
                     item = {
                         "title": "%s (%s)" % (name, val),
                         "subtitle": "%s: %s" % (PARAM_DEF_MAP.get(t) or t, desc),
