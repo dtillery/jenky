@@ -275,6 +275,15 @@ class ParamMenu(BaseMenu):
                 break
         self.param_type = self.param_info.get("type")
 
+    def filter(self, items):
+        if self.query_parts[-1] and not self.query_parts[-1].startswith(self.param_name):
+            if self.param_type not in ("StringParameterDefinition", "TextParameterDefinition", "PasswordParameterDefinition"):
+                return self.wf.filter(self.query_parts[-1], items[1:], key=self.search_key_for_option, min_score=20)
+        return items
+
+    def search_key_for_option(self, item):
+        return item.get("title", "")
+
     def build_param_set_string(self, choice):
         if not self.existing_query_params:
             self.existing_query_params = "params"
