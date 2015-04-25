@@ -34,7 +34,11 @@ class BaseMenu(object):
         self.query = query
         self.log = self.wf.logger
 
+    def filter(self, items):
+        return items
+
     def set_menu(self):
-        for item in self.items:
+        items = self.filter(self.items)
+        for item in items:
             self.wf.add_item(**item)
         self.wf.send_feedback()
