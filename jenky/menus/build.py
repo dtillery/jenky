@@ -250,11 +250,11 @@ class ParamMenu(BaseMenu):
                     "icon": ICON_ERROR
                 }
             ]
-        items.append({
+        items.insert(1, {
                 "title": "Cancel parameter set.",
                 "subtitle": "Return to the main build menu.",
                 "valid": False,
-                "autocomplete": self.query,
+                "autocomplete": self.cancel_string,
                 "icon": ICON_WARNING
             })
         return items
@@ -267,6 +267,11 @@ class ParamMenu(BaseMenu):
         self.existing_query_params = SUBQUERY_DELIMITER in self.query_parts[1] and self.query_parts[1]
         self.chosen_params = parse_inline_params(self.existing_query_params)
         self.param_name = self.query_parts[-2]
+        self.cancel_string = "%(jn)s %(del)s %(ep)s %(del)s Build %(del)s " % {
+            "jn": self.job_name,
+            "del": QUERY_DELIMITER,
+            "ep": self.existing_query_params
+        }
 
         parameters = self.wf.cached_data("%s_params" % self.job_name, max_age=0)
         for param in parameters:
