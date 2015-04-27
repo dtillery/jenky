@@ -61,7 +61,7 @@ def build(wf, build_string):
             continue
         chosen_val = passed_params.get(name)
         default = param.get("defaultParameterValue") or {}
-        final_val = chosen_val or default.get("value")
+        final_val = chosen_val or default.get("value", "")
         # translate bools
         if isinstance(final_val, basestring) and final_val.startswith("jenkybool"):
             final_val = final_val == "jenkybooltrue"
